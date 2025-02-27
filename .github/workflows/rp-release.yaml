@@ -14,7 +14,6 @@ jobs:
       - name: Run tests
         run: |
           echo "Running tests..."
-
   bump-version:
     needs: test
     runs-on: ubuntu-latest
