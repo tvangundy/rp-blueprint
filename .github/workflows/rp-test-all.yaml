@@ -4,7 +4,27 @@ on:
   repository_dispatch:  # Triggered automatically by dependent repositories
     types: [test-trigger]
 
+# on:
+#   workflow_dispatch:
+#     inputs:
+#       confirm:
+#         description: 'Type "YES" to approve release'
+#         required: true
+#         default: 'NO'
+
 jobs:
+
+  # Verify Approval
+  verify_approval:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify Approval
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "YES" ]; then
+          echo "Approval not given. Exiting."
+          exit 1
+          fi
+
   test-dependencies:
     runs-on: ubuntu-latest
     steps:
