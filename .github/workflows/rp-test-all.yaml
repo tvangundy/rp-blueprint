@@ -24,9 +24,12 @@ jobs:
     steps:
       - name: Verify Approval
         run: |
+          echo "Current version: ${{ env.current_version }}"
+          echo "Operating System: $(uname -s)"
+          echo "Platform: $(uname -m)"
           if [ "${{ github.event.inputs.confirm }}" != "YES" ]; then
-          echo "Approval not given. Exiting."
-          exit 1
+            echo "Approval not given. Exiting."
+            exit 1
           fi
 
   test-dependencies:
