@@ -9,12 +9,16 @@ on:
     branches:
       - main
       
-  workflow_dispatch:
-    inputs:
-      confirm:
-        description: 'Type "YES" to approve release'
-        required: true
-        default: 'NO'
+  # workflow_dispatch:
+  #   inputs:
+  #     confirm:
+  #       description: 'Type "YES" to approve release'
+  #       required: true
+  #       default: 'NO'
+
+  repository_dispatch:
+    types: [trigger-tests]  # Listens for this event type
+  workflow_dispatch:  # Allows manual trigger via Actions tab
 
 jobs:
 
