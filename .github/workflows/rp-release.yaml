@@ -5,6 +5,9 @@ on:
       - main
   workflow_dispatch: 
 
+env:
+  current_version: 0.1.13
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -20,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Bump version
-        run: ./bump-version.sh
+        run: ./bump-version.sh ${{ env.current_version }}
       - name: Create Git Tag
         run: |
           VERSION=$(cat VERSION)
