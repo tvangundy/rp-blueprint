@@ -1,16 +1,20 @@
 name: Validate All Repositories
-on:
-  workflow_dispatch:  # Enables manual trigger from GitHub UI
-  repository_dispatch:  # Triggered automatically by dependent repositories
-    types: [test-trigger]
-
 # on:
-#   workflow_dispatch:
-#     inputs:
-#       confirm:
-#         description: 'Type "YES" to approve release'
-#         required: true
-#         default: 'NO'
+#   workflow_dispatch:  # Enables manual trigger from GitHub UI
+#   repository_dispatch:  # Triggered automatically by dependent repositories
+#     types: [test-trigger]
+
+on:
+  push:
+    branches:
+      - main
+      
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "YES" to approve release'
+        required: true
+        default: 'NO'
 
 jobs:
 
