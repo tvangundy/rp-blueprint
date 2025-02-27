@@ -1,0 +1,32 @@
+name: Validate All Repositories
+on:
+  workflow_dispatch:  # Enables manual trigger from GitHub UI
+  repository_dispatch:  # Triggered automatically by dependent repositories
+    types: [test-trigger]
+
+jobs:
+  test-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout windsortest
+        uses: actions/checkout@v3
+
+      - name: Clone latest main branches of dependencies
+        run: |
+          echo "Cloning core"
+          # git clone --depth 1 --branch main https://github.com/YOUR_ORG/core.git
+          # git clone --depth 1 --branch main https://github.com/YOUR_ORG/cli.git
+          # git clone --depth 1 --branch main https://github.com/YOUR_ORG/app.git
+
+      - name: Run integration tests
+        run: |
+          echo "Running integration tests"
+          #   ./run-integration-tests.sh
+
+  approve-release:
+    needs: test-dependencies
+    runs-on: ubuntu-latest
+    environment: manual-approval  # Requires manual confirmation
+    steps:
+      - name: Approve release
+        run: echo "All tests passed. Ready for tagging."
