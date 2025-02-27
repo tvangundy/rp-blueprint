@@ -27,6 +27,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}  # Use your PAT stored as a secret
         run: |
+          # Check if secret starts with ghp_
+          if [[ "${{ secrets.PAT_TOKEN }}" == ghp_* ]]; then
+            echo "Secret starts with ghp_, using it"
+          else
+            echo "Secret does not start with ghp_, using PAT"
+          fi
           VERSION=$(cat VERSION)
           git tag v$VERSION
           git push https://x-access-token:${GITHUB_TOKEN}@github.com/tvangundy/rp-blueprint.git v$VERSION
