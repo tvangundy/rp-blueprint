@@ -1,0 +1,21 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: 
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run tests
+        run: |
+          echo "Running tests..."
+
+  bump-version:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@
