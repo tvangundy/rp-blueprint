@@ -7,7 +7,6 @@ on:
 
 env:
   current_version: 0.1.13
-
 jobs:
   test:
     runs-on: ubuntu-latest
