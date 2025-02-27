@@ -23,6 +23,11 @@ jobs:
       - uses: actions/checkout@v3
       - name: Bump version
         run: ./bump-version.sh ${{ env.current_version }}
+      - name: Verify Token Permissions
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          curl -H "Authorization: token ${GITHUB_TOKEN}" https://api.github.com/user/repos
       - name: Create Git Tag
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}  # Use your PAT stored as a secret
