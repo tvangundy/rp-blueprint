@@ -6,13 +6,13 @@ on:
 
 jobs:
   trigger-windsortest:
-    if: contains(github.event.issue.labels.*.name, 'test')  # Only runs for issues with 'test' label
+    if: contains(github.event.issue.labels.*.name, 'test') 
     runs-on: ubuntu-latest
     steps:
       - name: Send Repository Dispatch Event
         run: |
           echo "Sending Repository Dispatch Event"
-          curl -X POST -H "Authorization: token ${{ secrets.REPO_DISPATCH_TOKEN }}" \
-               -H "Accept: application/vnd.github.v3+json" \
-               https://api.github.com/repos/tvangundy/rp-blueprint/dispatches \
-               -d '{"event_type": "trigger-tests"}'
+          # curl -X POST -H "Authorization: token ${{ secrets.REPO_DISPATCH_TOKEN }}" \
+          #      -H "Accept: application/vnd.github.v3+json" \
+          #      https://api.github.com/repos/tvangundy/rp-blueprint/dispatches \
+          #      -d '{"event_type": "trigger-tests"}'
