@@ -1,0 +1,19 @@
+name: 'Deploy Docs'
+description: 'Deploys docs from a specified branch'
+inputs:
+  docs:
+    description: 'Docs Branch: [latest, docs-x.y.z]'
+    required: false
+    default: 'latest'
+  token:
+    description: 'GitHub Token'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+
+    - name: Deploy Docs
+      shell: bash
+      run: |
+        echo "Deploying docs from ${{ inputs.docs }}"
