@@ -1,0 +1,94 @@
+name: 'Run Integration Test'
+description: 'Runs integration tests on a specified release branch'
+inputs:
+  release:
+    description: 'Release Branch: [latest, release-x.y.z, x.y.z]'
+    required: false
+    default: 'latest'
+  token:
+    description: 'GitHub Token'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Determine Latest Release Branch
+      id: get_latest_release_branch
+      shell: bash
+      run: |
+        release_input="${{ inputs.release }}"
+
+        if [[ ! $release_input =~ ^(latest|release-[0-9]+\.[0-9]+\.[0-9]+|v?[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+          echo "Invalid release input. Please provide 'latest' or a version in the format 'release-x.y.z', 'v0.1.0', or '0.1.0'."
+          exit 1
+        fi
+
+        if [[ $release_input == 'latest' ]]; then
+          git fetch --all
+          latest_release_branch=$(git branch -r --list 'origin/release-*' | sed 's|origin/||' | sort -V | tail -1)
+          latest_release_branch=$(echo "$latest_release_branch" | xargs)
+          if [[ -z $latest_release_branch ]]; then
+            release="main"
+          else
+            release=$latest_release_branch
+          fi
+        else
+          if [[ $release_input =~ ^release-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            release=$release_input
+          elif [[ $release_input =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            release="release-${release_input#v}"
+          else
+            echo "Unexpected release format. Exiting."
+            exit 1
+          fi
+        fi
+
+        release=$(echo "$release" | xargs)
+        echo "Latest release branch: $release"
+        echo "::set-output name=latest_release_branch::$release"
+
+    - name: Dispatch Integration Test
+      id: dispatch
+      shell: bash
+      run: |
+        latest_release_branch="${{ steps.get_latest_release_branch.outputs.latest_release_branch }}"
+        response=$(curl -s -X POST \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: token ${{ inputs.token }}" \
+          https://api.github.com/repos/tvangundy/rp-windsortest/actions/workflows/integration-test-dispatch.yaml/dispatches \
+          -d "{\"ref\":\"main\", \"inputs\": {\"ref\":\"$latest_release_branch\"}}")
+        echo "Response: $response"
+
+    - name: Wait for Integration Test Dispatch Completion
+      id: wait
+      shell: bash
+      run: |
+        run_id=""
+        while [ -z "$run_id" ]; do
+          sleep 10
+          run_id=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ inputs.token }}" \
+            https://api.github.com/repos/tvangundy/rp-windsortest/actions/runs?event=workflow_dispatch \
+            | jq -r '.workflow_runs[] | select(.name=="Integration Test Dispatch") | .id' | head -n 1)
+        done
+        
+        echo "Run ID: $run_id"
+
+        status=""
+        conclusion=""
+        while [[ "$status" != "completed" ]]; do
+          sleep 10
+          response=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ inputs.token }}" \
+            https://api.github.com/repos/tvangundy/rp-windsortest/actions/runs/$run_id)
+          status=$(echo "$response" | jq -r '.status')
+          conclusion=$(echo "$response" | jq -r '.conclusion')
+          echo "Status: $status, Conclusion: $conclusion"
+        done
+
+        if [[ "$conclusion" != "success" ]]; then
+          echo "Workflow failed with conclusion: $conclusion"
+          exit 1
+        fi
+        echo "Workflow completed successfully."
+  

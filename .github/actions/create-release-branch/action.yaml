@@ -1,0 +1,88 @@
+name: 'Create Release Branch'
+description: 'Creates a release branch from a specified source branch'
+inputs:
+  src_branch:
+    description: 'Source Branch: [main, release-x.y.z]'
+    required: false
+    default: 'main'
+  release:
+    description: 'Release Branch: [latest, release-x.y.z]'
+    required: false
+    default: 'latest'
+  token:
+    description: 'GitHub Token'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+
+    - name: Create release branch
+      shell: bash
+      run: |
+        # Assign the input to a shell variable
+        release_input="${{ inputs.release }}"
+        src_branch="${{ inputs.src_branch }}"
+
+        # Validate the input
+        if [[ ! $release_input =~ ^(latest|release-[0-9]+\.[0-9]+\.[0-9]+|v?[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+          echo "Invalid release input. Please provide 'latest' or a version in the format 'release-x.y.z', 'v0.1.0', or '0.1.0'."
+          exit 1
+        fi
+
+        if [[ $release_input == 'latest' ]]; then
+          # Fetch all branches from the remote
+          git fetch --all
+
+          # Get the latest branch named release-x.y.z from the remote repo
+          latest_release_branch=$(git branch -r --list 'origin/release-*' | sed 's|origin/||' | sort -V | tail -1)
+
+          # Trim whitespace from both sides of latest_release_branch
+          latest_release_branch=$(echo "$latest_release_branch" | xargs)
+
+          if [[ -z $latest_release_branch ]]; then
+            current_release=$src_branch
+          else
+            current_release=$latest_release_branch
+          fi
+        else
+          # Normalize the release format to release-x.y.z
+          if [[ $release_input =~ ^release-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            current_release=$release_input
+          elif [[ $release_input =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            current_release="release-${release_input#v}"
+          else
+            echo "Unexpected release format. Exiting."
+            exit 1
+          fi
+        fi
+
+        # Trim whitespace from both sides of current_release
+        current_release=$(echo "$current_release" | xargs)
+
+        if git rev-parse --verify --quiet origin/$current_release; then
+          echo "Branch $current_release exists remotely. Checking out and pulling latest changes."
+          git checkout $current_release || git checkout -b $current_release origin/$current_release
+          git pull origin $current_release
+        else
+          # Fetch all branches from the remote
+          git fetch --all
+
+          # Check if the source branch exists
+          if git rev-parse --verify --quiet origin/$src_branch; then
+            echo "Source branch $src_branch exists remotely. Checking out and pulling latest changes."
+            git checkout $src_branch || git checkout -b $src_branch origin/$src_branch
+            git pull origin $src_branch
+          else
+            echo "Source branch $src_branch does not exist remotely. Exiting."
+            exit 1
+          fi
+
+          # Create the new release branch
+          echo "Creating new branch $current_release."
+          git checkout -b $current_release
+          
+          # Push the branch
+          git push https://x-access-token:${{ inputs.token }}@github.com/${{ github.repository }} $current_release
+          echo "Branch $current_release created and pushed."
+        fi
