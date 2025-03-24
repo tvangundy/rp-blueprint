@@ -59,26 +59,36 @@ runs:
         echo "Latest release branch: $release"
         echo "::set-output name=latest_release_branch::$release"
 
-    - name: Configure Git
-      shell: bash
-      run: |
-        git config --global user.email "ci@example.com"
-        git config --global user.name "CI Bot"
-
     - name: Checkout Release Branch
-      shell: bash
-      run: |
-        latest_release_branch="${{ steps.get_latest_release_branch.outputs.latest_release_branch }}"
-        git checkout $latest_release_branch
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ steps.get_latest_release_branch.outputs.latest_release_branch }}
 
-    - name: Create Tag and Release
-      shell: bash
-      run: |
-        version=${{ steps.get_latest_release_branch.outputs.version }}
-        git tag -a "v$version" -m "Release v$version"
-        git push origin "v$version"
-        curl -s -X POST \
-          -H "Accept: application/vnd.github.v3+json" \
-          -H "Authorization: token ${{ inputs.token }}" \
-          https://api.github.com/repos/tvangundy/rp-cli/releases \
-          -d "{\"tag_name\": \"v$version\", \"name\": \"v$version\", \"body\": \"Release v$version\", \"draft\": false, \"prerelease\": false}"
+    - name: Create Tag
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const version = '${{ steps.get_latest_release_branch.outputs.version }}';
+          const tagName = `v${version}`;
+          await github.git.createRef({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: `refs/tags/${tagName}`,
+            sha: context.sha
+          });
+
+    - name: Create Release
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const version = '${{ steps.get_latest_release_branch.outputs.version }}';
+          const tagName = `v${version}`;
+          await github.repos.createRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            tag_name: tagName,
+            name: tagName,
+            body: `Release ${tagName}`,
+            draft: false,
+            prerelease: false
+          });
