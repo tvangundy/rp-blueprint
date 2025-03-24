@@ -70,13 +70,13 @@ runs:
     #   with:
     #     ref: process.env.latest_release_branch
 
-    # - name: View context attributes
-    #   uses: actions/github-script@v6
-    #   with:
-    #     script: console.log(context)
+    - name: View context attributes
+      uses: actions/github-script@v7
+      with:
+        script: console.log(context)
 
     - name: Create Tag
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         github-token: ${{ inputs.token }}
         script: |
