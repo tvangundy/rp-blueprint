@@ -77,6 +77,7 @@ runs:
             sha: context.sha
           });
           console.log(`Created tag: ${ref.ref}`);
+        github-token: ${{ inputs.token }}
 
     - name: Create Release
       uses: actions/github-script@v6
