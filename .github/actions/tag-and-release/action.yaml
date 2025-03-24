@@ -83,11 +83,12 @@ runs:
     - name: Create Tag
       uses: actions/github-script@v7
       with:
-        # github-token: ${{ inputs.token }}
-        script: 
+        script: |
           console.log(`Repo: ${context.repo.repo}`);
           console.log(`Owner: ${context.repo.owner}`);
           console.log(`Sha: ${context.sha}`);
+          console.log(`Latest Release Branch: ${process.env.latest_release_branch}`);
+          console.log(`Version: ${process.env.version}`);
 
 
     #       # echo "Latest Release Branch: $process.env.latest_release_branch"
