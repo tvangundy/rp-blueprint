@@ -65,10 +65,10 @@ runs:
         echo "latest_release_branch=$release" >> $GITHUB_ENV
         echo "version=$version" >> $GITHUB_ENV
 
-    - name: Checkout Release Branch
-      uses: actions/checkout@v2
-      with:
-        ref: process.env.latest_release_branch
+    # - name: Checkout Release Branch
+    #   uses: actions/checkout@v2
+    #   with:
+    #     ref: process.env.latest_release_branch
 
     # - name: View context attributes
     #   uses: actions/github-script@v6
