@@ -68,22 +68,23 @@ runs:
       uses: actions/github-script@v6
       with:
         script: |
-          const version = '${{ steps.get_latest_release_branch.outputs.version }}';
+          const version = process.env.version;
           const tagName = `v${version}`;
-          await github.git.createRef({
+          const { data: ref } = await github.git.createRef({
             owner: context.repo.owner,
             repo: context.repo.repo,
             ref: `refs/tags/${tagName}`,
             sha: context.sha
           });
+          console.log(`Created tag: ${ref.ref}`);
 
     - name: Create Release
       uses: actions/github-script@v6
       with:
         script: |
-          const version = '${{ steps.get_latest_release_branch.outputs.version }}';
+          const version = process.env.version;
           const tagName = `v${version}`;
-          await github.repos.createRelease({
+          const { data: release } = await github.repos.createRelease({
             owner: context.repo.owner,
             repo: context.repo.repo,
             tag_name: tagName,
@@ -92,3 +93,4 @@ runs:
             draft: false,
             prerelease: false
           });
+          console.log(`Created release: ${release.name}`);
