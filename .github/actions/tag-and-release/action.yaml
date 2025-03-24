@@ -80,7 +80,9 @@ runs:
       with:
         github-token: ${{ inputs.token }}
         script: |
-          echo "Hello World"
+          console.log("Hello World")
+
+
           # echo "Latest Release Branch: $process.env.latest_release_branch"
           # echo "Version: $process.env.version"
 
