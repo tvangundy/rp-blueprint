@@ -10,7 +10,6 @@ inputs:
     required: true
 
 jobs:
-  tag-and-release:
   using: 'composite'
   steps:
     - name: Determine Latest Release Branch
