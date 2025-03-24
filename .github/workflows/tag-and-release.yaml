@@ -24,4 +24,4 @@ jobs:
         uses: windsorcli/blueprint/.github/actions/tag-and-release@release-process
         with:
           release: ${{ inputs.release }}
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}

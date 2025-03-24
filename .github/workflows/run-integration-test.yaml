@@ -21,6 +21,6 @@ jobs:
       uses: windsorcli/blueprint/.github/actions/run-integration-test@release-process
       with:
         release: ${{ inputs.release }}   
-        token: ${{ secrets.GH_TOKEN }}   
+        token: ${{ secrets.GITHUB_TOKEN }}   
 
   

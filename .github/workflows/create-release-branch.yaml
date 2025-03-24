@@ -28,4 +28,4 @@ jobs:
         with:
           src_branch: ${{ inputs.src_branch }}
           release: ${{ inputs.release }}
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
