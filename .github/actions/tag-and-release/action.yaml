@@ -69,15 +69,21 @@ runs:
       with:
         github-token: ${{ inputs.token }}
         script: |
-          const version = process.env.version;
-          const tagName = `v${version}`;
-          const { data: ref } = await github.git.createRef({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            ref: `refs/tags/${tagName}`,
-            sha: context.sha
-          });
-          console.log(`Created tag: ${ref.ref}`);
+          console.log(`Creating tag: ${process.env.version}`);
+          console.log(`Version: ${process.env.version}`);
+          console.log(`Repo: ${context.repo.repo}`);
+          console.log(`Owner: ${context.repo.owner}`);
+          console.log(`Sha: ${context.sha}`);
+
+          # const version = process.env.version;
+          # const tagName = `v${version}`;
+          # const { data: ref } = await github.git.createRef({
+          #   owner: context.repo.owner,
+          #   repo: context.repo.repo,
+          #   ref: `refs/tags/${tagName}`,
+          #   sha: context.sha
+          # });
+          # console.log(`Created tag: ${ref.ref}`);
 
     - name: Create Release
       uses: actions/github-script@v6
