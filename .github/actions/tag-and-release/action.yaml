@@ -82,8 +82,8 @@ runs:
         script: |
           const latestReleaseBranch = process.env.latest_release_branch;
           const version = process.env.version;
-          console.log(`Creating tag: ${latestReleaseBranch}`);
-          console.log(`Version: ${version}`);
+          console.log(`Creating tag: $latestReleaseBranch`);
+          console.log(`Version: $version`);
           console.log(`Repo: ${context.repo.repo}`);
           console.log(`Owner: ${context.repo.owner}`);
           console.log(`Sha: ${context.sha}`);
