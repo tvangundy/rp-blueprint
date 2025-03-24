@@ -9,7 +9,7 @@ inputs:
     description: 'GitHub Token'
     required: true
 
-jobs:
+runs:
   using: 'composite'
   steps:
     - name: Determine Latest Release Branch
@@ -55,20 +55,20 @@ jobs:
         fi
 
         echo "Version: $version"
-        echo "::set-output name=version::$version"
         echo "Latest release branch: $release"
-        echo "::set-output name=latest_release_branch::$release"
+        echo "version=$version" >> $GITHUB_ENV
+        echo "latest_release_branch=$release" >> $GITHUB_ENV
 
     - name: Checkout Release Branch
       uses: actions/checkout@v2
       with:
-        ref: ${{ steps.get_latest_release_branch.outputs.latest_release_branch }}
+        ref: ${{ env.latest_release_branch }}
 
     - name: Create Tag
       uses: actions/github-script@v6
       with:
         script: |
-          const version = '${{ steps.get_latest_release_branch.outputs.version }}';
+          const version = process.env.version;
           const tagName = `v${version}`;
           await github.git.createRef({
             owner: context.repo.owner,
@@ -81,7 +81,7 @@ jobs:
       uses: actions/github-script@v6
       with:
         script: |
-          const version = '${{ steps.get_latest_release_branch.outputs.version }}';
+          const version = process.env.version;
           const tagName = `v${version}`;
           await github.repos.createRelease({
             owner: context.repo.owner,
