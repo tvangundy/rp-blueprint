@@ -90,13 +90,13 @@ runs:
           console.log(`Latest Release Branch: ${process.env.latest_release_branch}`);
           console.log(`Version: ${process.env.version}`);
 
-          const { data: ref } = await github.git.createRef({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            ref: `refs/tags/${process.env.version}`,
-            sha: context.sha
-          });
-          console.log(`Created tag: ${ref.ref}`);
+          # const { data: ref } = await github.git.createRef({
+          #   owner: context.repo.owner,
+          #   repo: context.repo.repo,
+          #   ref: `refs/tags/${process.env.version}`,
+          #   sha: context.sha
+          # });
+          # console.log(`Created tag: ${ref.ref}`);
 
 
     #       # echo "Latest Release Branch: $process.env.latest_release_branch"
