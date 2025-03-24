@@ -59,8 +59,8 @@ runs:
         # echo "Latest release branch: $release"
         # echo "::set-output name=latest_release_branch::$release"
 
-        console.log(`Creating tag: $release`);
-        console.log(`Version: $version`);
+        console.log("Creating tag: $release");
+        console.log("Version: $version");
           
         echo "latest_release_branch=$release" >> $GITHUB_ENV
         echo "version=$version" >> $GITHUB_ENV
