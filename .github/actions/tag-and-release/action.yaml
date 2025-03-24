@@ -69,12 +69,20 @@ runs:
       with:
         script: console.log(context)
 
+    - name: Set Environment Variables
+      run: |
+        echo "latest_release_branch=${{ steps.get_latest_release_branch.outputs.latest_release_branch }}" >> $GITHUB_ENV
+        echo "version=${{ steps.get_latest_release_branch.outputs.version }}" >> $GITHUB_ENV
+
     - name: Create Tag
       uses: actions/github-script@v6
       with:
+        github-token: ${{ inputs.token }}
         script: |
-          console.log(`Creating tag: ${steps.get_latest_release_branch.outputs.latest_release_branch}`);
-          console.log(`Version: ${steps.get_latest_release_branch.outputs.latest_release_branch}`);
+          const latestReleaseBranch = process.env.latest_release_branch;
+          const version = process.env.version;
+          console.log(`Creating tag: ${latestReleaseBranch}`);
+          console.log(`Version: ${version}`);
           console.log(`Repo: ${context.repo.repo}`);
           console.log(`Owner: ${context.repo.owner}`);
           console.log(`Sha: ${context.sha}`);
