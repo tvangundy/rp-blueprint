@@ -59,7 +59,7 @@ runs:
         # echo "Latest release branch: $release"
         # echo "::set-output name=latest_release_branch::$release"
 
-        echo "Creating tag: $release"
+        echo "Latest Release Branch: $release"
         echo "Version: $version"
           
         echo "latest_release_branch=$release" >> $GITHUB_ENV
@@ -80,13 +80,16 @@ runs:
       with:
         github-token: ${{ inputs.token }}
         script: |
-          const latestReleaseBranch = process.env.latest_release_branch;
-          const version = process.env.version;
-          console.log(`Creating tag: $latestReleaseBranch`);
-          console.log(`Version: $version`);
-          console.log(`Repo: ${context.repo.repo}`);
-          console.log(`Owner: ${context.repo.owner}`);
-          console.log(`Sha: ${context.sha}`);
+          echo "Latest Release Branch: $process.env.latest_release_branch"
+          echo "Version: $process.env.version"
+
+          # const latestReleaseBranch = process.env.latest_release_branch;
+          # const version = process.env.version;
+          # console.log(`Creating tag: $latestReleaseBranch`);
+          # console.log(`Version: $version`);
+          # console.log(`Repo: ${context.repo.repo}`);
+          # console.log(`Owner: ${context.repo.owner}`);
+          # console.log(`Sha: ${context.sha}`);
 
     #       # const version = process.env.version;
     #       # const tagName = `v${version}`;
