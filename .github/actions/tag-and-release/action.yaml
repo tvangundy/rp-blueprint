@@ -80,7 +80,9 @@ runs:
       with:
         # github-token: ${{ inputs.token }}
         script: |
-          console.log("Hello World")
+          console.log(`Repo: ${context.repo.repo}`);
+          console.log(`Owner: ${context.repo.owner}`);
+          console.log(`Sha: ${context.sha}`);
 
 
           # echo "Latest Release Branch: $process.env.latest_release_branch"
