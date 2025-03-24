@@ -9,9 +9,10 @@ inputs:
     description: 'GitHub Token'
     required: true
 
-runs:
-  using: 'composite'
-  steps:
+jobs:
+  tag-and-release:
+    runs-on: ubuntu-latest
+    steps:
     - name: Determine Latest Release Branch
       id: get_latest_release_branch
       shell: bash
