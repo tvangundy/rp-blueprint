@@ -11,85 +11,85 @@ inputs:
 
 jobs:
   tag-and-release:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Determine Latest Release Branch
-        id: get_latest_release_branch
-        shell: bash
-        run: |
-          release_input="${{ inputs.release }}"
+  using: 'composite'
+  steps:
+    - name: Determine Latest Release Branch
+      id: get_latest_release_branch
+      shell: bash
+      run: |
+        release_input="${{ inputs.release }}"
 
-          if [[ ! $release_input =~ ^(latest|release-[0-9]+\.[0-9]+\.[0-9]+|v?[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            echo "Invalid release input. Please provide 'latest' or a version in the format 'release-x.y.z', 'v0.1.0', or '0.1.0'."
-            exit 1
-          fi
+        if [[ ! $release_input =~ ^(latest|release-[0-9]+\.[0-9]+\.[0-9]+|v?[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+          echo "Invalid release input. Please provide 'latest' or a version in the format 'release-x.y.z', 'v0.1.0', or '0.1.0'."
+          exit 1
+        fi
 
-          if [[ $release_input == 'latest' ]]; then
-            git fetch --all
-            latest_release_branch=$(git branch -r --list 'origin/release-*' | sed 's|origin/||' | sort -V | tail -1)
-            latest_release_branch=$(echo "$latest_release_branch" | xargs)
-            if [[ -z $latest_release_branch ]]; then
-              release="main"
-            else
-              release=$latest_release_branch
-            fi
+        if [[ $release_input == 'latest' ]]; then
+          git fetch --all
+          latest_release_branch=$(git branch -r --list 'origin/release-*' | sed 's|origin/||' | sort -V | tail -1)
+          latest_release_branch=$(echo "$latest_release_branch" | xargs)
+          if [[ -z $latest_release_branch ]]; then
+            release="main"
           else
-            if [[ $release_input =~ ^release-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              release=$release_input
-            elif [[ $release_input =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              release="release-${release_input#v}"
-            else
-              echo "Unexpected release format. Exiting."
-              exit 1
-            fi
+            release=$latest_release_branch
           fi
-
-          release=$(echo "$release" | xargs)
-
-          if [[ $release =~ ^release-([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            version="${BASH_REMATCH[1]}"
-          elif [[ $release =~ ^v?([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            version="${BASH_REMATCH[1]}"
+        else
+          if [[ $release_input =~ ^release-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            release=$release_input
+          elif [[ $release_input =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            release="release-${release_input#v}"
           else
             echo "Unexpected release format. Exiting."
             exit 1
           fi
+        fi
 
-          echo "Version: $version"
-          echo "::set-output name=version::$version"
-          echo "Latest release branch: $release"
-          echo "::set-output name=latest_release_branch::$release"
+        release=$(echo "$release" | xargs)
 
-      - name: Checkout Release Branch
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ steps.get_latest_release_branch.outputs.latest_release_branch }}
+        if [[ $release =~ ^release-([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+          version="${BASH_REMATCH[1]}"
+        elif [[ $release =~ ^v?([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+          version="${BASH_REMATCH[1]}"
+        else
+          echo "Unexpected release format. Exiting."
+          exit 1
+        fi
 
-      - name: Create Tag
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const version = '${{ steps.get_latest_release_branch.outputs.version }}';
-            const tagName = `v${version}`;
-            await github.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `refs/tags/${tagName}`,
-              sha: context.sha
-            });
+        echo "Version: $version"
+        echo "::set-output name=version::$version"
+        echo "Latest release branch: $release"
+        echo "::set-output name=latest_release_branch::$release"
 
-      - name: Create Release
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const version = '${{ steps.get_latest_release_branch.outputs.version }}';
-            const tagName = `v${version}`;
-            await github.repos.createRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag_name: tagName,
-              name: tagName,
-              body: `Release ${tagName}`,
-              draft: false,
-              prerelease: false
-            });
+    - name: Checkout Release Branch
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ steps.get_latest_release_branch.outputs.latest_release_branch }}
+
+    - name: Create Tag
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const version = '${{ steps.get_latest_release_branch.outputs.version }}';
+          const tagName = `v${version}`;
+          await github.git.createRef({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: `refs/tags/${tagName}`,
+            sha: context.sha
+          });
+
+    - name: Create Release
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const version = '${{ steps.get_latest_release_branch.outputs.version }}';
+          const tagName = `v${version}`;
+          await github.repos.createRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            tag_name: tagName,
+            name: tagName,
+            body: `Release ${tagName}`,
+            draft: false,
+            prerelease: false
+          });
