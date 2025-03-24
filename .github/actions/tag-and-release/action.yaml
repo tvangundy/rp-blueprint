@@ -78,7 +78,7 @@ runs:
     - name: Create Tag
       uses: actions/github-script@v6
       with:
-        github-token: ${{ inputs.token }}
+        # github-token: ${{ inputs.token }}
         script: |
           console.log("Hello World")
 
