@@ -73,8 +73,8 @@ runs:
       uses: actions/github-script@v6
       with:
         script: |
-          console.log(`Creating tag: ${process.env.version}`);
-          console.log(`Version: ${process.env.version}`);
+          console.log(`Creating tag: ${steps.get_latest_release_branch.outputs.latest_release_branch}`);
+          console.log(`Version: ${steps.get_latest_release_branch.outputs.latest_release_branch}`);
           console.log(`Repo: ${context.repo.repo}`);
           console.log(`Owner: ${context.repo.owner}`);
           console.log(`Sha: ${context.sha}`);
