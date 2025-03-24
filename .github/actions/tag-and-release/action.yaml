@@ -59,6 +59,9 @@ runs:
         echo "Latest release branch: $release"
         echo "::set-output name=latest_release_branch::$release"
 
+        echo "latest_release_branch=${{ steps.get_latest_release_branch.outputs.latest_release_branch }}" >> $GITHUB_ENV
+        echo "version=${{ steps.get_latest_release_branch.outputs.version }}" >> $GITHUB_ENV
+
     - name: Checkout Release Branch
       uses: actions/checkout@v2
       with:
@@ -69,11 +72,11 @@ runs:
       with:
         script: console.log(context)
 
-    - name: Set Environment Variables
-      shell: bash
-      run: |
-        echo "latest_release_branch=${{ steps.get_latest_release_branch.outputs.latest_release_branch }}" >> $GITHUB_ENV
-        echo "version=${{ steps.get_latest_release_branch.outputs.version }}" >> $GITHUB_ENV
+    # - name: Set Environment Variables
+    #   shell: bash
+    #   run: |
+    #     echo "latest_release_branch=${{ steps.get_latest_release_branch.outputs.latest_release_branch }}" >> $GITHUB_ENV
+    #     echo "version=${{ steps.get_latest_release_branch.outputs.version }}" >> $GITHUB_ENV
 
     - name: Create Tag
       uses: actions/github-script@v6
