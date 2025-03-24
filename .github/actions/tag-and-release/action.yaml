@@ -97,7 +97,15 @@ runs:
             repo: context.repo.repo,
             ref: tagName,
             sha: context.sha
+          }).catch(err => {
+          if (err.status !== 422) throw err;
+          github.rest.git.updateRef({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: 'tags/v${process.env.version}',
+            sha: context.sha
           });
+        
           console.log(`Created tag: ${ref.ref}`);
 
 
