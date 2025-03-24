@@ -64,40 +64,45 @@ runs:
       with:
         ref: ${{ steps.get_latest_release_branch.outputs.latest_release_branch }}
 
-    - name: Create Tag
+    - name: View context attributes
       uses: actions/github-script@v6
       with:
-        github-token: ${{ inputs.token }}
-        script: |
-          console.log(`Creating tag: ${process.env.version}`);
-          console.log(`Version: ${process.env.version}`);
-          console.log(`Repo: ${context.repo.repo}`);
-          console.log(`Owner: ${context.repo.owner}`);
-          console.log(`Sha: ${context.sha}`);
+        script: console.log(context)
 
-          # const version = process.env.version;
-          # const tagName = `v${version}`;
-          # const { data: ref } = await github.git.createRef({
-          #   owner: context.repo.owner,
-          #   repo: context.repo.repo,
-          #   ref: `refs/tags/${tagName}`,
-          #   sha: context.sha
-          # });
-          # console.log(`Created tag: ${ref.ref}`);
+    # - name: Create Tag
+    #   uses: actions/github-script@v6
+    #   with:
+    #     github-token: ${{ inputs.token }}
+    #     script: |
+    #       console.log(`Creating tag: ${process.env.version}`);
+    #       console.log(`Version: ${process.env.version}`);
+    #       console.log(`Repo: ${context.repo.repo}`);
+    #       console.log(`Owner: ${context.repo.owner}`);
+    #       console.log(`Sha: ${context.sha}`);
 
-    - name: Create Release
-      uses: actions/github-script@v6
-      with:
-        script: |
-          const version = process.env.version;
-          const tagName = `v${version}`;
-          const { data: release } = await github.repos.createRelease({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            tag_name: tagName,
-            name: tagName,
-            body: `Release ${tagName}`,
-            draft: false,
-            prerelease: false
-          });
-          console.log(`Created release: ${release.name}`);
+    #       # const version = process.env.version;
+    #       # const tagName = `v${version}`;
+    #       # const { data: ref } = await github.git.createRef({
+    #       #   owner: context.repo.owner,
+    #       #   repo: context.repo.repo,
+    #       #   ref: `refs/tags/${tagName}`,
+    #       #   sha: context.sha
+    #       # });
+    #       # console.log(`Created tag: ${ref.ref}`);
+
+    # - name: Create Release
+    #   uses: actions/github-script@v6
+    #   with:
+    #     script: |
+    #       const version = process.env.version;
+    #       const tagName = `v${version}`;
+    #       const { data: release } = await github.repos.createRelease({
+    #         owner: context.repo.owner,
+    #         repo: context.repo.repo,
+    #         tag_name: tagName,
+    #         name: tagName,
+    #         body: `Release ${tagName}`,
+    #         draft: false,
+    #         prerelease: false
+    #       });
+    #       console.log(`Created release: ${release.name}`);
