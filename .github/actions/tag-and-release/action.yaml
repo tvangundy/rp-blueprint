@@ -60,11 +60,11 @@ runs:
         echo "latest_release_branch=$release" >> $GITHUB_ENV
         echo "version=$version" >> $GITHUB_ENV
 
-    - name: Set Environment Variables
-      shell: bash
-      run: |
-        echo "LATEST_RELEASE_BRANCH=${{ env.latest_release_branch }}" >> $GITHUB_ENV
-        echo "VERSION=${{ env.version }}" >> $GITHUB_ENV
+    # - name: Set Environment Variables
+    #   shell: bash
+    #   run: |
+    #     echo "LATEST_RELEASE_BRANCH=${{ env.latest_release_branch }}" >> $GITHUB_ENV
+    #     echo "VERSION=${{ env.version }}" >> $GITHUB_ENV
 
     - name: Checkout Release Branch
       uses: actions/checkout@v2
@@ -76,7 +76,7 @@ runs:
       with:
         github-token: ${{ inputs.token }}
         script: |
-          const version = process.env.VERSION;
+          const version = process.env.version;
           const tagName = `v${version}`;
           const { data: ref } = await github.rest.git.createRef({
             owner: context.repo.owner,
@@ -91,7 +91,7 @@ runs:
       with:
         github-token: ${{ inputs.token }}
         script: |
-          const version = process.env.VERSION;
+          const version = process.env.version;
           const tagName = `v${version}`;
           const { data: release } = await github.rest.repos.createRelease({
             owner: context.repo.owner,
