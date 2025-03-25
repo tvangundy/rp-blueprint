@@ -25,12 +25,12 @@ runs:
 
         if [[ $release_input == 'latest' ]]; then
           git fetch --all
-          latest_release_branch=$(git branch -r --list 'origin/release-*' | sed 's|origin/||' | sort -V | tail -1)
-          latest_release_branch=$(echo "$latest_release_branch" | xargs)
-          if [[ -z $latest_release_branch ]]; then
+          LATEST_RELEASE_BRANCH=$(git branch -r --list 'origin/release-*' | sed 's|origin/||' | sort -V | tail -1)
+          LATEST_RELEASE_BRANCH=$(echo "$LATEST_RELEASE_BRANCH" | xargs)
+          if [[ -z $LATEST_RELEASE_BRANCH ]]; then
             release="main"
           else
-            release=$latest_release_branch
+            release=$LATEST_RELEASE_BRANCH
           fi
         else
           if [[ $release_input =~ ^release-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -57,30 +57,34 @@ runs:
         echo "Latest Release Branch: $release"
         echo "Version: $version"
           
-        echo "latest_release_branch=$release" >> $GITHUB_ENV
-        echo "version=$version" >> $GITHUB_ENV
+        echo "LATEST_RELEASE_BRANCH=$release" >> $GITHUB_ENV
+        echo "VERSION=$version" >> $GITHUB_ENV
 
-    # - name: Set Environment Variables
-    #   shell: bash
-    #   run: |
-    #     echo "LATEST_RELEASE_BRANCH=${{ env.latest_release_branch }}" >> $GITHUB_ENV
-    #     echo "VERSION=${{ env.version }}" >> $GITHUB_ENV
+    - name: Set Repository Environment Variables
+      run: |
+        echo "REPO_OWNER=tvangundy" >> $GITHUB_ENV
+        echo "REPO_NAME=rp-cli" >> $GITHUB_ENV
+        
+        # echo "REPO_OWNER=windsorcli" >> $GITHUB_ENV
+        # echo "REPO_NAME=cli" >> $GITHUB_ENV
 
     - name: Checkout Release Branch
       uses: actions/checkout@v2
       with:
-        ref: ${{ env.latest_release_branch }}
+        repository: ${{ env.REPO_OWNER }}/${{ env.REPO_NAME }}
+        ref: ${{ env.LATEST_RELEASE_BRANCH }}
+        token: ${{ inputs.token }}
 
     - name: Create Tag
       uses: actions/github-script@v7
       with:
         github-token: ${{ inputs.token }}
         script: |
-          const version = process.env.version;
+          const version = process.env.VERSION;
           const tagName = `v${version}`;
           const { data: ref } = await github.rest.git.createRef({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
+            owner: process.env.REPO_OWNER,
+            repo: process.env.REPO_NAME,
             ref: `refs/tags/${tagName}`,
             sha: context.sha
           });
@@ -91,11 +95,11 @@ runs:
       with:
         github-token: ${{ inputs.token }}
         script: |
-          const version = process.env.version;
+          const version = process.env.VERSION;
           const tagName = `v${version}`;
           const { data: release } = await github.rest.repos.createRelease({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
+            owner: process.env.REPO_OWNER,
+            repo: process.env.REPO_NAME,
             tag_name: tagName,
             name: tagName,
             body: `Release ${tagName}`,
@@ -103,3 +107,41 @@ runs:
             prerelease: false
           });
           console.log(`Created release: ${release.name}`);
+
+    # - name: Checkout Release Branch
+    #   uses: actions/checkout@v2
+    #   with:
+    #     ref: ${{ env.LATEST_RELEASE_BRANCH }}
+
+    # - name: Create Tag
+    #   uses: actions/github-script@v7
+    #   with:
+    #     github-token: ${{ inputs.token }}
+    #     script: |
+    #       const version = process.env.version;
+    #       const tagName = `v${version}`;
+    #       const { data: ref } = await github.rest.git.createRef({
+    #         owner: context.repo.owner,
+    #         repo: context.repo.repo,
+    #         ref: `refs/tags/${tagName}`,
+    #         sha: context.sha
+    #       });
+    #       console.log(`Created tag: ${ref.ref}`);
+
+    # - name: Create Release
+    #   uses: actions/github-script@v7
+    #   with:
+    #     github-token: ${{ inputs.token }}
+    #     script: |
+    #       const version = process.env.version;
+    #       const tagName = `v${version}`;
+    #       const { data: release } = await github.rest.repos.createRelease({
+    #         owner: context.repo.owner,
+    #         repo: context.repo.repo,
+    #         tag_name: tagName,
+    #         name: tagName,
+    #         body: `Release ${tagName}`,
+    #         draft: false,
+    #         prerelease: false
+    #       });
+    #       console.log(`Created release: ${release.name}`);
