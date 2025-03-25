@@ -25,12 +25,12 @@ runs:
 
         if [[ $release_input == 'latest' ]]; then
           git fetch --all
-          LATEST_RELEASE_BRANCH=$(git branch -r --list 'origin/release-*' | sed 's|origin/||' | sort -V | tail -1)
-          LATEST_RELEASE_BRANCH=$(echo "$LATEST_RELEASE_BRANCH" | xargs)
-          if [[ -z $LATEST_RELEASE_BRANCH ]]; then
+          latest_release_branch=$(git branch -r --list 'origin/release-*' | sed 's|origin/||' | sort -V | tail -1)
+          latest_release_branch=$(echo "$latest_release_branch" | xargs)
+          if [[ -z $latest_release_branch ]]; then
             release="main"
           else
-            release=$LATEST_RELEASE_BRANCH
+            release=$latest_release_branch
           fi
         else
           if [[ $release_input =~ ^release-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -61,10 +61,11 @@ runs:
         echo "VERSION=$version" >> $GITHUB_ENV
 
     - name: Set Repository Environment Variables
+      shell: bash
       run: |
         echo "REPO_OWNER=tvangundy" >> $GITHUB_ENV
         echo "REPO_NAME=rp-cli" >> $GITHUB_ENV
-        
+
         # echo "REPO_OWNER=windsorcli" >> $GITHUB_ENV
         # echo "REPO_NAME=cli" >> $GITHUB_ENV
 
