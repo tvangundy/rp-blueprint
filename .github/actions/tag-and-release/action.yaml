@@ -84,7 +84,7 @@ runs:
       uses: actions/github-script@v7
       with:
         script: |
-          console.log("Hello World")
+          console.log("Hello World"); \
           console.log("Hello World")
 
           # console.log(`Repo: ${context.repo.repo}`);
