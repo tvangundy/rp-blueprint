@@ -8,12 +8,15 @@ inputs:
   token:
     description: 'GitHub Token'
     required: true
+  repo_owner:
+    description: 'Repository Owner'
+    required: true
+  repo_name:
+    description: 'Repository Name'
+    required: true
 
 runs:
   using: 'composite'
-  env:
-    REPO_OWNER: tvangundy
-    REPO_NAME: rp-cli
   steps:
     - name: Determine Latest Release Branch
       id: get_latest_release_branch
@@ -66,7 +69,7 @@ runs:
     - name: Checkout Release Branch
       uses: actions/checkout@v2
       with:
-        repository: ${{ env.REPO_OWNER }}/${{ env.REPO_NAME }}
+        repository: ${{ inputs.repo_owner }}/${{ inputs.repo_name }}
         ref: ${{ env.LATEST_RELEASE_BRANCH }}
         token: ${{ inputs.token }}
 
@@ -78,8 +81,8 @@ runs:
           const version = process.env.VERSION;
           const tagName = `v${version}`;
           const { data: ref } = await github.rest.git.createRef({
-            owner: process.env.REPO_OWNER,
-            repo: process.env.REPO_NAME,
+            owner: '${{ inputs.repo_owner }}',
+            repo: '${{ inputs.repo_name }}',
             ref: `refs/tags/${tagName}`,
             sha: context.sha
           });
@@ -93,8 +96,8 @@ runs:
           const version = process.env.VERSION;
           const tagName = `v${version}`;
           const { data: release } = await github.rest.repos.createRelease({
-            owner: process.env.REPO_OWNER,
-            repo: process.env.REPO_NAME,
+            owner: '${{ inputs.repo_owner }}',
+            repo: '${{ inputs.repo_name }}',
             tag_name: tagName,
             name: tagName,
             body: `Release ${tagName}`,
