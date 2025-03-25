@@ -23,7 +23,7 @@ runs:
   using: 'composite'
   steps:
 
-    - name: Create release branch
+    - name: Validate release input
       shell: bash
       run: |
         # Assign the input to a shell variable
@@ -36,12 +36,18 @@ runs:
           exit 1
         fi
 
+    - name: Clone the repository
+      shell: bash
+      run: |
         # Clone the repository
         git clone https://github.com/${{ inputs.repo_owner }}/${{ inputs.repo_name }}.git
         cd ${{ inputs.repo_name }}
-        git checkout $src_branch
+        git checkout ${{ inputs.src_branch }}
 
-        if [[ $release_input == 'latest' ]]; then
+    - name: Create the release branch
+      shell: bash
+      run: |
+        if [[ ${{ inputs.release }} == 'latest' ]]; then
           # Fetch all branches from the remote
           git fetch --all
 
@@ -52,16 +58,16 @@ runs:
           latest_release_branch=$(echo "$latest_release_branch" | xargs)
 
           if [[ -z $latest_release_branch ]]; then
-            current_release=$src_branch
+            current_release=${{ inputs.src_branch }}
           else
             current_release=$latest_release_branch
           fi
         else
           # Normalize the release format to release-x.y.z
-          if [[ $release_input =~ ^release-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            current_release=$release_input
-          elif [[ $release_input =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            current_release="release-${release_input#v}"
+          if [[ ${{ inputs.release }} =~ ^release-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            current_release=${{ inputs.release }}
+          elif [[ ${{ inputs.release }} =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            current_release="release-${{ inputs.release#v }}"
           else
             echo "Unexpected release format. Exiting."
             exit 1
@@ -80,12 +86,12 @@ runs:
           git fetch --all
 
           # Check if the source branch exists
-          if git rev-parse --verify --quiet origin/$src_branch; then
-            echo "Source branch $src_branch exists remotely. Checking out and pulling latest changes."
-            git checkout $src_branch || git checkout -b $src_branch origin/$src_branch
-            git pull origin $src_branch
+          if git rev-parse --verify --quiet origin/${{ inputs.src_branch }}; then
+            echo "Source branch ${{ inputs.src_branch }} exists remotely. Checking out and pulling latest changes."
+            git checkout ${{ inputs.src_branch }} || git checkout -b ${{ inputs.src_branch }} origin/${{ inputs.src_branch }}
+            git pull origin ${{ inputs.src_branch }}
           else
-            echo "Source branch $src_branch does not exist remotely. Exiting."
+            echo "Source branch ${{ inputs.src_branch }} does not exist remotely. Exiting."
             exit 1
           fi
 
