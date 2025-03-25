@@ -54,11 +54,6 @@ runs:
           exit 1
         fi
 
-        # echo "Version: $version"
-        # echo "::set-output name=version::$version"
-        # echo "Latest release branch: $release"
-        # echo "::set-output name=latest_release_branch::$release"
-
         echo "Latest Release Branch: $release"
         echo "Version: $version"
           
@@ -66,6 +61,7 @@ runs:
         echo "version=$version" >> $GITHUB_ENV
 
     - name: Set Environment Variables
+      shell: bash
       run: |
         echo "LATEST_RELEASE_BRANCH=${{ env.latest_release_branch }}" >> $GITHUB_ENV
         echo "VERSION=${{ env.version }}" >> $GITHUB_ENV
@@ -80,7 +76,7 @@ runs:
       with:
         github-token: ${{ inputs.token }}
         script: |
-          const version = env.version;
+          const version = process.env.VERSION;
           const tagName = `v${version}`;
           const { data: ref } = await github.rest.git.createRef({
             owner: context.repo.owner,
@@ -95,7 +91,7 @@ runs:
       with:
         github-token: ${{ inputs.token }}
         script: |
-          const version = env.version;
+          const version = process.env.VERSION;
           const tagName = `v${version}`;
           const { data: release } = await github.rest.repos.createRelease({
             owner: context.repo.owner,
