@@ -9,6 +9,12 @@ inputs:
     description: 'Release Branch: [latest, release-x.y.z]'
     required: false
     default: 'latest'
+  repo_owner:
+    description: 'Repository Owner'
+    required: true
+  repo_name:
+    description: 'Repository Name'
+    required: true
   token:
     description: 'GitHub Token'
     required: true
@@ -29,6 +35,11 @@ runs:
           echo "Invalid release input. Please provide 'latest' or a version in the format 'release-x.y.z', 'v0.1.0', or '0.1.0'."
           exit 1
         fi
+
+        # Clone the repository
+        git clone https://github.com/${{ inputs.repo_owner }}/${{ inputs.repo_name }}.git
+        cd ${{ inputs.repo_name }}
+        git checkout $src_branch
 
         if [[ $release_input == 'latest' ]]; then
           # Fetch all branches from the remote
