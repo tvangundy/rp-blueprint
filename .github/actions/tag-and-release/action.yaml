@@ -5,14 +5,14 @@ inputs:
     description: 'Release Branch: [latest, release-x.y.z, x.y.z]'
     required: false
     default: 'latest'
-  token:
-    description: 'GitHub Token'
-    required: true
   repo_owner:
     description: 'Repository Owner'
     required: true
   repo_name:
     description: 'Repository Name'
+    required: true
+  token:
+    description: 'GitHub Token'
     required: true
 
 runs:
