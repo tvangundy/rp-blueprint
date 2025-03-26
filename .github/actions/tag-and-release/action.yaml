@@ -1,12 +1,8 @@
-name: 'Create Release Branch'
-description: 'Creates a release branch from a specified source branch'
+name: 'Tag and Release'
+description: 'Tags and releases a new version of the project'
 inputs:
-  src_branch:
-    description: 'Source Branch: [main, release-x.y.z]'
-    required: false
-    default: 'main'
   release:
-    description: 'Release Branch: [latest, release-x.y.z]'
+    description: 'Release Branch: [latest, release-x.y.z, x.y.z]'
     required: false
     default: 'latest'
   repo_owner:
@@ -22,72 +18,91 @@ inputs:
 runs:
   using: 'composite'
   steps:
-
-    - name: Validate release input
+    - name: Determine Latest Release Branch
+      id: get_latest_release_branch
       shell: bash
       run: |
         release_input="${{ inputs.release }}"
+
         if [[ ! $release_input =~ ^(latest|release-[0-9]+\.[0-9]+\.[0-9]+|v?[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
           echo "Invalid release input. Please provide 'latest' or a version in the format 'release-x.y.z', 'v0.1.0', or '0.1.0'."
           exit 1
         fi
 
-    - name: Determine Current Release Branch
-      id: determine_release
+        if [[ $release_input == 'latest' ]]; then
+          git fetch --all
+          latest_release_branch=$(git branch -r --list 'origin/release-*' | sed 's|origin/||' | sort -V | tail -1)
+          latest_release_branch=$(echo "$latest_release_branch" | xargs)
+          if [[ -z $latest_release_branch ]]; then
+            release="main"
+          else
+            release=$latest_release_branch
+          fi
+        else
+          if [[ $release_input =~ ^release-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            release=$release_input
+          elif [[ $release_input =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            release="release-${release_input#v}"
+          else
+            echo "Unexpected release format. Exiting."
+            exit 1
+          fi
+        fi
+
+        release=$(echo "$release" | xargs)
+
+        if [[ $release =~ ^release-([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+          version="${BASH_REMATCH[1]}"
+        elif [[ $release =~ ^v?([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+          version="${BASH_REMATCH[1]}"
+        else
+          echo "Unexpected release format. Exiting."
+          exit 1
+        fi
+
+        echo "Latest Release Branch: $release"
+        echo "Version: $version"
+          
+        echo "LATEST_RELEASE_BRANCH=$release" >> $GITHUB_ENV
+        echo "VERSION=$version" >> $GITHUB_ENV
+
+    - name: Checkout Release Branch
+      uses: actions/checkout@v2
+      with:
+        repository: ${{ inputs.repo_owner }}/${{ inputs.repo_name }}
+        ref: ${{ env.LATEST_RELEASE_BRANCH }}
+        token: ${{ inputs.token }}
+
+    - name: Create Tag
       uses: actions/github-script@v7
       with:
         github-token: ${{ inputs.token }}
         script: |
-          const releaseInput = '${{ inputs.release }}';
-          let currentRelease;
-
-          if (releaseInput === 'latest') {
-            const branches = await github.rest.repos.listBranches({
-              owner: '${{ inputs.repo_owner }}',
-              repo: '${{ inputs.repo_name }}',
-            });
-
-            const releaseBranches = branches.data
-              .map(branch => branch.name)
-              .filter(name => name.startsWith('release-'))
-              .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-
-            currentRelease = releaseBranches.pop() || '${{ inputs.src_branch }}';
-          } else {
-            currentRelease = releaseInput.startsWith('release-') ? releaseInput : `release-${releaseInput.replace(/^v/, '')}`;
-          }
-
-          core.setOutput('current_release', currentRelease);
-
-    - name: Create or Update Release Branch
-      uses: actions/github-script@v7
-      with:
-        github-token: ${{ inputs.token }}
-        script: |
-          const currentRelease = core.getInput('current_release');
-          const { data: branches } = await github.rest.repos.listBranches({
+          const version = process.env.VERSION;
+          const tagName = `v${version}`;
+          const { data: ref } = await github.rest.git.createRef({
             owner: '${{ inputs.repo_owner }}',
             repo: '${{ inputs.repo_name }}',
+            ref: `refs/tags/${tagName}`,
+            sha: context.sha
           });
+          console.log(`Created tag: ${ref.ref}`);
 
-          const branchExists = branches.some(branch => branch.name === currentRelease);
+    - name: Create Release
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          const version = process.env.VERSION;
+          const tagName = `v${version}`;
+          const { data: release } = await github.rest.repos.createRelease({
+            owner: '${{ inputs.repo_owner }}',
+            repo: '${{ inputs.repo_name }}',
+            tag_name: tagName,
+            name: tagName,
+            body: `Release ${tagName}`,
+            draft: false,
+            prerelease: false
+          });
+          console.log(`Created release: ${release.name}`);
 
-          if (branchExists) {
-            console.log(`Branch ${currentRelease} already exists.`);
-          } else {
-            const { data: srcBranch } = await github.rest.repos.getBranch({
-              owner: '${{ inputs.repo_owner }}',
-              repo: '${{ inputs.repo_name }}',
-              branch: '${{ inputs.src_branch }}',
-            });
-
-            await github.rest.git.createRef({
-              owner: '${{ inputs.repo_owner }}',
-              repo: '${{ inputs.repo_name }}',
-              ref: `refs/heads/${currentRelease}`,
-              sha: srcBranch.commit.sha,
-            });
-
-            console.log(`Branch ${currentRelease} created.`);
-          }
-          
