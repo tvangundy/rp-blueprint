@@ -9,6 +9,12 @@ inputs:
     description: 'Docs Branch: [latest, docs-x.y.z]'
     required: false
     default: 'latest'
+  repo_owner:
+    description: 'Repository Owner'
+    required: true
+  repo_name:
+    description: 'Repository Name'
+    required: true
   token:
     description: 'GitHub Token'
     required: true
@@ -17,72 +23,70 @@ runs:
   using: 'composite'
   steps:
 
-    - name: Create docs branch
+    - name: Validate docs input
       shell: bash
       run: |
-        # Assign the input to a shell variable
         docs_input="${{ inputs.docs }}"
-        src_branch="${{ inputs.src_branch }}"
-
-        # Validate the input
         if [[ ! $docs_input =~ ^(latest|docs-[0-9]+\.[0-9]+\.[0-9]+|v?[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
           echo "Invalid docs input. Please provide 'latest' or a version in the format 'docs-x.y.z', 'v0.1.0', or '0.1.0'."
           exit 1
         fi
 
-        if [[ $docs_input == 'latest' ]]; then
-          # Fetch all branches from the remote
-          git fetch --all
+    - name: Determine Current Docs Branch
+      id: determine_docs
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          const docsInput = '${{ inputs.docs }}';
+          let currentDocs;
 
-          # Get the latest branch named docs-x.y.z from the remote repo
-          latest_docs_branch=$(git branch -r --list 'origin/docs-*' | sed 's|origin/||' | sort -V | tail -1)
+          if (docsInput === 'latest') {
+            const branches = await github.rest.repos.listBranches({
+              owner: '${{ inputs.repo_owner }}',
+              repo: '${{ inputs.repo_name }}',
+            });
 
-          # Trim whitespace from both sides of latest_docs_branch
-          latest_docs_branch=$(echo "$latest_docs_branch" | xargs)
+            const docsBranches = branches.data
+              .map(branch => branch.name)
+              .filter(name => name.startsWith('docs-'))
+              .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
-          if [[ -z $latest_docs_branch ]]; then
-            current_docs=$src_branch
-          else
-            current_docs=$latest_docs_branch
-          fi
-        else
-          # Normalize the docs format to docs-x.y.z
-          if [[ $docs_input =~ ^docs-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            current_docs=$docs_input
-          elif [[ $docs_input =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            current_docs="docs-${docs_input#v}"
-          else
-            echo "Unexpected docs format. Exiting."
-            exit 1
-          fi
-        fi
+            currentDocs = docsBranches.pop() || '${{ inputs.src_branch }}';
+          } else {
+            currentDocs = docsInput.startsWith('docs-') ? docsInput : `docs-${docsInput.replace(/^v/, '')}`;
+          }
 
-        # Trim whitespace from both sides of current_docs
-        current_docs=$(echo "$current_docs" | xargs)
+          core.setOutput('current_docs', currentDocs);
 
-        if git rev-parse --verify --quiet origin/$current_docs; then
-          echo "Branch $current_docs exists remotely. Checking out and pulling latest changes."
-          git checkout $current_docs || git checkout -b $current_docs origin/$current_docs
-          git pull origin $current_docs
-        else
-          # Fetch all branches from the remote
-          git fetch --all
+    - name: Create or Update Docs Branch
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          const currentDocs = '${{ steps.determine_docs.outputs.current_docs }}';
+          const { data: branches } = await github.rest.repos.listBranches({
+            owner: '${{ inputs.repo_owner }}',
+            repo: '${{ inputs.repo_name }}',
+          });
 
-          # Check if the source branch exists
-          if git rev-parse --verify --quiet origin/$src_branch; then
-            echo "Source branch $src_branch exists remotely. Checking out and pulling latest changes."
-            git checkout $src_branch || git checkout -b $src_branch origin/$src_branch
-            git pull origin $src_branch
-          else
-            echo "Source branch $src_branch does not exist remotely. Exiting."
-            exit 1
-          fi
+          const branchExists = branches.some(branch => branch.name === currentDocs);
 
-          # Create the new docs branch
-          echo "Creating new branch $current_docs."
-          git checkout -b $current_docs
-          
-          # Push the branch
-          git push https://x-access-token:${{ inputs.token }}@github.com/${{ github.repository }} $current_docs
-          echo "Branch $current_docs created and pushed."
-        fi
+          if (branchExists) {
+            console.log(`Branch ${currentDocs} already exists.`);
+          } else {
+            const { data: srcBranch } = await github.rest.repos.getBranch({
+              owner: '${{ inputs.repo_owner }}',
+              repo: '${{ inputs.repo_name }}',
+              branch: '${{ inputs.src_branch }}',
+            });
+
+            await github.rest.git.createRef({
+              owner: '${{ inputs.repo_owner }}',
+              repo: '${{ inputs.repo_name }}',
+              ref: `refs/heads/${currentDocs}`,
+              sha: srcBranch.commit.sha,
+            });
+
+            console.log(`Branch ${currentDocs} created.`);
+          }
