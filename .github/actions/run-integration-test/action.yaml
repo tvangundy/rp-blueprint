@@ -11,6 +11,12 @@ inputs:
   repo_name:
     description: 'Repository Name'
     required: true
+  test_repo_owner:
+    description: 'Test Repository Owner'
+    required: true
+  test_repo_name:
+    description: 'Test Repository Name'
+    required: true
   token:
     description: 'GitHub Token'
     required: true
@@ -53,8 +59,8 @@ runs:
         script: |
           const latestReleaseBranch = '${{ steps.determine_release.outputs.current_release }}';
           const response = await github.rest.actions.createWorkflowDispatch({
-            owner: '${{ inputs.repo_owner }}',
-            repo: '${{ inputs.repo_name }}',
+            owner: '${{ inputs.test_repo_owner }}',
+            repo: '${{ inputs.test_repo_name }}',
             workflow_id: 'integration-test-dispatch.yaml',
             ref: 'main',
             inputs: {
@@ -70,8 +76,8 @@ runs:
         github-token: ${{ inputs.token }}
         script: |
           const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
-            owner: '${{ inputs.repo_owner }}',
-            repo: '${{ inputs.repo_name }}',
+            owner: '${{ inputs.test_repo_owner }}',
+            repo: '${{ inputs.test_repo_name }}',
             event: 'workflow_dispatch'
           });
 
@@ -88,8 +94,8 @@ runs:
           while (status !== 'completed') {
             await new Promise(resolve => setTimeout(resolve, 10000)); // Sleep for 10 seconds
             const { data: updatedRun } = await github.rest.actions.getWorkflowRun({
-              owner: '${{ inputs.repo_owner }}',
-              repo: '${{ inputs.repo_name }}',
+              owner: '${{ inputs.test_repo_owner }}',
+              repo: '${{ inputs.test_repo_name }}',
               run_id: run.id
             });
             status = updatedRun.status;
