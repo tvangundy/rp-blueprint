@@ -65,7 +65,6 @@ runs:
         github-token: ${{ inputs.token }}
         script: |
           const currentRelease = '${{ steps.determine_release.outputs.current_release }}';
-          console.log(`Current release: ${currentRelease}`);
           const { data: branches } = await github.rest.repos.listBranches({
             owner: '${{ inputs.repo_owner }}',
             repo: '${{ inputs.repo_name }}',
