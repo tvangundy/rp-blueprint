@@ -26,11 +26,9 @@ runs:
     - name: Validate release input
       shell: bash
       run: |
-        # Assign the input to a shell variable
         release_input="${{ inputs.release }}"
         src_branch="${{ inputs.src_branch }}"
 
-        # Validate the input
         if [[ ! $release_input =~ ^(latest|release-[0-9]+\.[0-9]+\.[0-9]+|v?[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
           echo "Invalid release input. Please provide 'latest' or a version in the format 'release-x.y.z', 'v0.1.0', or '0.1.0'."
           exit 1
@@ -39,7 +37,6 @@ runs:
     - name: Clone the repository
       shell: bash
       run: |
-        # Clone the repository
         git clone https://github.com/${{ inputs.repo_owner }}/${{ inputs.repo_name }}.git
         cd ${{ inputs.repo_name }}
         git checkout ${{ inputs.src_branch }}
@@ -48,13 +45,8 @@ runs:
       shell: bash
       run: |
         if [[ ${{ inputs.release }} == 'latest' ]]; then
-          # Fetch all branches from the remote
           git fetch --all
-
-          # Get the latest branch named release-x.y.z from the remote repo
           latest_release_branch=$(git branch -r --list 'origin/release-*' | sed 's|origin/||' | sort -V | tail -1)
-
-          # Trim whitespace from both sides of latest_release_branch
           latest_release_branch=$(echo "$latest_release_branch" | xargs)
 
           if [[ -z $latest_release_branch ]]; then
@@ -63,18 +55,16 @@ runs:
             current_release=$latest_release_branch
           fi
         else
-          # Normalize the release format to release-x.y.z
           if [[ ${{ inputs.release }} =~ ^release-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             current_release=${{ inputs.release }}
           elif [[ ${{ inputs.release }} =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            current_release="${{ format('release-{0}', inputs.release.replace('v', '')) }}"
+            current_release="release-${{ inputs.release#v }}"
           else
             echo "Unexpected release format. Exiting."
             exit 1
           fi
         fi
 
-        # Trim whitespace from both sides of current_release
         current_release=$(echo "$current_release" | xargs)
 
         if git rev-parse --verify --quiet origin/$current_release; then
@@ -82,10 +72,8 @@ runs:
           git checkout $current_release || git checkout -b $current_release origin/$current_release
           git pull origin $current_release
         else
-          # Fetch all branches from the remote
           git fetch --all
 
-          # Check if the source branch exists
           if git rev-parse --verify --quiet origin/${{ inputs.src_branch }}; then
             echo "Source branch ${{ inputs.src_branch }} exists remotely. Checking out and pulling latest changes."
             git checkout ${{ inputs.src_branch }} || git checkout -b ${{ inputs.src_branch }} origin/${{ inputs.src_branch }}
@@ -95,11 +83,9 @@ runs:
             exit 1
           fi
 
-          # Create the new release branch
           echo "Creating new branch $current_release."
           git checkout -b $current_release
           
-          # Push the branch
           git push https://x-access-token:${{ inputs.token }}@github.com/${{ github.repository }} $current_release
           echo "Branch $current_release created and pushed."
         fi
