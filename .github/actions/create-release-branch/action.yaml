@@ -67,7 +67,7 @@ runs:
           if [[ ${{ inputs.release }} =~ ^release-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             current_release=${{ inputs.release }}
           elif [[ ${{ inputs.release }} =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            current_release: ${{ 'release-' + inputs.release.replace('v', '') }}
+            current_release="${{ format('release-{0}', inputs.release.replace('v', '')) }}"
           else
             echo "Unexpected release format. Exiting."
             exit 1
