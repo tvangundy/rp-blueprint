@@ -57,6 +57,7 @@ runs:
             currentRelease = releaseInput.startsWith('release-') ? releaseInput : `release-${releaseInput.replace(/^v/, '')}`;
           }
 
+          console.log(`Current release: ${currentRelease}`);
           core.setOutput('current_release', currentRelease);
 
     - name: Create or Update Release Branch
