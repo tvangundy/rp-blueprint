@@ -24,6 +24,15 @@ inputs:
 runs:
   using: 'composite'
   steps:
+
+    - name: Validate release input
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          const releaseInput = '${{ inputs.release }}';
+          const validFormat = /^(latest|release-[0-9]+\.[0-9]+\.[0-9]+|v?[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+\.[0-9]+)$/;
+
     - name: Determine Current Release Branch
       id: determine_release
       uses: actions/github-script@v7
@@ -108,4 +117,3 @@ runs:
           }
 
           console.log('Workflow completed successfully.');
-  

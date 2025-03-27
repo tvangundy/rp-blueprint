@@ -18,53 +18,57 @@ inputs:
 runs:
   using: 'composite'
   steps:
+
+    - name: Validate release input
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          const releaseInput = '${{ inputs.release }}';
+          const validFormat = /^(latest|release-[0-9]+\.[0-9]+\.[0-9]+|v?[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+\.[0-9]+)$/;
+
     - name: Determine Latest Release Branch
       id: get_latest_release_branch
-      shell: bash
-      run: |
-        release_input="${{ inputs.release }}"
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          const releaseInput = '${{ inputs.release }}';
+          const validFormat = /^(latest|release-[0-9]+\.[0-9]+\.[0-9]+|v?[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+\.[0-9]+)$/;
 
-        if [[ ! $release_input =~ ^(latest|release-[0-9]+\.[0-9]+\.[0-9]+|v?[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-          echo "Invalid release input. Please provide 'latest' or a version in the format 'release-x.y.z', 'v0.1.0', or '0.1.0'."
-          exit 1
-        fi
+          if (!validFormat.test(releaseInput)) {
+            throw new Error("Invalid release input. Please provide 'latest' or a version in the format 'release-x.y.z', 'v0.1.0', or '0.1.0'.");
+          }
 
-        if [[ $release_input == 'latest' ]]; then
-          git fetch --all
-          latest_release_branch=$(git branch -r --list 'origin/release-*' | sed 's|origin/||' | sort -V | tail -1)
-          latest_release_branch=$(echo "$latest_release_branch" | xargs)
-          if [[ -z $latest_release_branch ]]; then
-            release="main"
-          else
-            release=$latest_release_branch
-          fi
-        else
-          if [[ $release_input =~ ^release-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            release=$release_input
-          elif [[ $release_input =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            release="release-${release_input#v}"
-          else
-            echo "Unexpected release format. Exiting."
-            exit 1
-          fi
-        fi
+          let release;
+          if (releaseInput === 'latest') {
+            const { data: branches } = await github.rest.repos.listBranches({
+              owner: '${{ inputs.repo_owner }}',
+              repo: '${{ inputs.repo_name }}',
+            });
 
-        release=$(echo "$release" | xargs)
+            const releaseBranches = branches
+              .map(branch => branch.name)
+              .filter(name => name.startsWith('release-'))
+              .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
-        if [[ $release =~ ^release-([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-          version="${BASH_REMATCH[1]}"
-        elif [[ $release =~ ^v?([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-          version="${BASH_REMATCH[1]}"
-        else
-          echo "Unexpected release format. Exiting."
-          exit 1
-        fi
+            release = releaseBranches.pop() || 'main';
+          } else {
+            release = releaseInput.startsWith('release-') ? releaseInput : `release-${releaseInput.replace(/^v/, '')}`;
+          }
 
-        echo "Latest Release Branch: $release"
-        echo "Version: $version"
-          
-        echo "LATEST_RELEASE_BRANCH=$release" >> $GITHUB_ENV
-        echo "VERSION=$version" >> $GITHUB_ENV
+          const versionMatch = release.match(/^release-([0-9]+\.[0-9]+\.[0-9]+)$/) || release.match(/^v?([0-9]+\.[0-9]+\.[0-9]+)$/);
+          if (!versionMatch) {
+            throw new Error("Unexpected release format.");
+          }
+
+          const version = versionMatch[1];
+
+          console.log(`Latest Release Branch: ${release}`);
+          console.log(`Version: ${version}`);
+
+          core.exportVariable('LATEST_RELEASE_BRANCH', release);
+          core.exportVariable('VERSION', version);
 
     - name: Checkout Release Branch
       uses: actions/checkout@v2
@@ -105,4 +109,3 @@ runs:
             prerelease: false
           });
           console.log(`Created release: ${release.name}`);
-
